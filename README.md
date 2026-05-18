@@ -16,45 +16,6 @@ A data-generation pipeline that extracts **FIRAC** (Facts · Issue · Rule · Ap
 
 ---
 
-## Repository layout
-
-```
-firac_extraction/
-├── config.py          # All tuneable constants (model, context limits, filenames, sampling params)
-├── main.py            # Entry point, 3-stage pipeline, batch runner, checkpoint logic
-├── models.py          # Pydantic schema (FIRACFormat), DistillationRecord, Case
-├── prompts.py         # System prompts, exemplars, stage-2 builder, stage-3 templates
-├── sanitizers.py      # Post-processing: strip court names, procedural history, CoT leaks
-├── text_extract.py    # pdfplumber extraction + judgment-section isolation
-├── utils.py           # _extract_cot_trace(), _extract_partial_json()
-├── validation.py      # Per-field validators + cross-validator + soft-pass logic
-└── requirements.txt
-```
-
----
-
-## Installation
-
-```bash
-pip install -r requirements.txt
-```
-
-**requirements.txt**
-```
-langchain==1.2.15
-langchain-core==1.2.28
-langchain-ollama==1.1.0
-pdfplumber
-```
-
-The pipeline uses [Ollama](https://ollama.com) to serve the teacher model locally. Pull the model before running:
-
-```bash
-ollama pull phi4:14b
-```
-
----
-
 ## Usage
 
 ```bash
