@@ -1,6 +1,6 @@
-TEACHER_MODEL: str = "phi4:14b"
+TEACHER_MODEL: str = "gemma3:27b"
 
-BASE_CTX: int = 16000
+BASE_CTX: int = 65536
 
 # MAX_INPUT_CHARS: int = 40000
 MIN_OUTPUT_TOKENS: int = 500

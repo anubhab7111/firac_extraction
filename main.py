@@ -171,17 +171,18 @@ def process_case(
     metrics: dict,
 ) -> tuple[Optional[DistillationRecord], str]:
     messages = cot_generation_prompt.format_messages(context=context)
-    prompt_tokens = llm_teacher_raw.get_num_tokens_from_messages(messages)
-    token_budget = BASE_CTX - MIN_OUTPUT_TOKENS
-
-    if prompt_tokens > token_budget:
-        print(
-            f"[SKIP] {doc_name}: full prompt is {prompt_tokens:,} tokens "
-            f"(budget {token_budget:,} = {BASE_CTX:,} ctx − {MIN_OUTPUT_TOKENS:,} output reserve). "
-            f"Skipping."
-        )
-        metrics["skipped_context_too_long"] += 1
-        return None, STATUS_SKIP_CTX
+    # prompt_text = "\n".join(f"{m.type}: {m.content}" for m in messages)
+    # prompt_tokens = llm_teacher_raw.get_num_tokens(prompt_text)
+    # token_budget = BASE_CTX - MIN_OUTPUT_TOKENS
+    #
+    # if prompt_tokens > token_budget:
+    #     print(
+    #         f"[SKIP] {doc_name}: full prompt is {prompt_tokens:,} tokens "
+    #         f"(budget {token_budget:,} = {BASE_CTX:,} ctx − {MIN_OUTPUT_TOKENS:,} output reserve). "
+    #         f"Skipping."
+    #     )
+    #     metrics["skipped_context_too_long"] += 1
+    #     return None, STATUS_SKIP_CTX
 
     raw_text_s1 = _raw_invoke(messages, 1)
     response_s1 = llm_teacher.invoke(messages)
