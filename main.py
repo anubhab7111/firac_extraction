@@ -6,14 +6,13 @@ import time
 from pathlib import Path
 from typing import Optional
 
-from langchain_core.load.dump import default
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_ollama import ChatOllama
 
 from config import (
     TEACHER_MODEL,
     BASE_CTX,
-    MAX_INPUT_CHARS,
+    MIN_OUTPUT_TOKENS,
     STAGE3_CONTEXT_CHARS,
     OUTPUT_FILENAME,
     CHECKPOINT_FILENAME,
@@ -89,10 +88,6 @@ llm_retry_raw = ChatOllama(
     top_p=STAGE3_TOP_P,
     top_k=STAGE3_TOP_K,
 )
-
-
-def _estimate_tokens(text: str) -> int:
-    return len(text) // 4
 
 
 def _raw_invoke(messages, stage: int) -> str:
@@ -175,17 +170,18 @@ def process_case(
     doc_name: str,
     metrics: dict,
 ) -> tuple[Optional[DistillationRecord], str]:
-    token_est = _estimate_tokens(context)
-    if len(context) > MAX_INPUT_CHARS:
+    messages = cot_generation_prompt.format_messages(context=context)
+    prompt_tokens = llm_teacher_raw.get_num_tokens_from_messages(messages)
+    token_budget = BASE_CTX - MIN_OUTPUT_TOKENS
+
+    if prompt_tokens > token_budget:
         print(
-            f"[SKIP] {doc_name}: judgment section is {len(context):,} chars "
-            f"(~{token_est:,} tokens), exceeds {MAX_INPUT_CHARS:,}-char limit. "
+            f"[SKIP] {doc_name}: full prompt is {prompt_tokens:,} tokens "
+            f"(budget {token_budget:,} = {BASE_CTX:,} ctx − {MIN_OUTPUT_TOKENS:,} output reserve). "
             f"Skipping."
         )
         metrics["skipped_context_too_long"] += 1
         return None, STATUS_SKIP_CTX
-
-    messages = cot_generation_prompt.format_messages(context=context)
 
     raw_text_s1 = _raw_invoke(messages, 1)
     response_s1 = llm_teacher.invoke(messages)
@@ -207,7 +203,7 @@ def process_case(
                 firac=response_s1.model_dump(),
                 stage=1,
                 model_name=TEACHER_MODEL,
-                input_token_estimate=token_est,
+                input_token_estimate=prompt_tokens,
             ),
             STATUS_PASS,
         )
@@ -279,7 +275,7 @@ def process_case(
                         firac=response_s2.model_dump(),
                         stage=2,
                         model_name=TEACHER_MODEL,
-                        input_token_estimate=token_est,
+                        input_token_estimate=prompt_tokens,
                     ),
                     STATUS_PASS,
                 )
@@ -317,7 +313,7 @@ def process_case(
                 firac=response_s3.model_dump(),
                 stage=3,
                 model_name=TEACHER_MODEL,
-                input_token_estimate=token_est,
+                input_token_estimate=prompt_tokens,
             ),
             STATUS_PASS,
         )
@@ -376,7 +372,7 @@ def run(input_dir: str, output_path: str, checkpoint_path: str) -> None:
     print(f"[INFO] Found {total} PDF(s) under {input_dir}")
     print(f"[INFO] Output  : {output_path}")
     print(f"[INFO] Checkpoint: {checkpoint_path}")
-    print(f"[INFO] Max input chars: {MAX_INPUT_CHARS:,}\n")
+    # print(f"[INFO] Max input chars: {MAX_INPUT_CHARS:,}\n")
 
     checkpoint = _load_checkpoint(checkpoint_path)
     metrics = _empty_metrics()

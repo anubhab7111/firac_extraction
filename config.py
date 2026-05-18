@@ -1,10 +1,11 @@
 TEACHER_MODEL: str = "phi4:14b"
 
-BASE_CTX: int = 16_000
+BASE_CTX: int = 16000
 
-MAX_INPUT_CHARS: int = 40_000
+# MAX_INPUT_CHARS: int = 40000
+MIN_OUTPUT_TOKENS: int = 500
 
-STAGE3_CONTEXT_CHARS: int = 12_000
+STAGE3_CONTEXT_CHARS: int = 12000
 
 OUTPUT_FILENAME: str = "firac_dataset.jsonl"
 
