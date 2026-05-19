@@ -1,6 +1,6 @@
-TEACHER_MODEL: str = "gemma3:27b"
+TEACHER_MODEL: str = "qwen2.5:3b-instruct"
 
-BASE_CTX: int = 65536
+BASE_CTX: int = 16_000
 
 # MAX_INPUT_CHARS: int = 40000
 MIN_OUTPUT_TOKENS: int = 500

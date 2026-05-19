@@ -1,4 +1,4 @@
-./results
-./firac_dataset.jsonl
-./checkpoint.json
-./__pycache__/*
+results/*
+firac_dataset.jsonl
+checkpoint.json
+__pycache__/*

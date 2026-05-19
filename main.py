@@ -90,19 +90,19 @@ llm_retry_raw = ChatOllama(
 )
 
 
-def _raw_invoke(messages, stage: int) -> str:
-    try:
-        if stage == 1:
-            response = llm_teacher_raw.invoke(messages)
-        elif stage == 3:
-            response = llm_retry_raw.invoke(messages)
-        else:
-            print(f"[WARN] _raw_invoke called with unsupported stage {stage}")
-            return ""
-        return response.content if hasattr(response, "content") else str(response)
-    except Exception as e:
-        print(f"[WARN] Raw invoke failed at stage {stage}: {e}")
-        return ""
+# def _raw_invoke(messages, stage: int) -> str:
+#     try:
+#         if stage == 1:
+#             response = llm_teacher_raw.invoke(messages)
+#         elif stage == 3:
+#             response = llm_retry_raw.invoke(messages)
+#         else:
+#             print(f"[WARN] _raw_invoke called with unsupported stage {stage}")
+#             return ""
+#         return response.content if hasattr(response, "content") else str(response)
+#     except Exception as e:
+#         print(f"[WARN] Raw invoke failed at stage {stage}: {e}")
+#         return ""
 
 
 def _empty_metrics() -> dict:
@@ -184,11 +184,11 @@ def process_case(
     #     metrics["skipped_context_too_long"] += 1
     #     return None, STATUS_SKIP_CTX
 
-    raw_text_s1 = _raw_invoke(messages, 1)
+    # raw_text_s1 = _raw_invoke(messages, 1)
     response_s1 = llm_teacher.invoke(messages)
-    cot_trace_s1 = (
-        _extract_cot_trace(raw_text_s1) if raw_text_s1 else "[trace unavailable]"
-    )
+    # cot_trace_s1 = (
+    #     _extract_cot_trace(raw_text_s1) if raw_text_s1 else "[trace unavailable]"
+    # )
 
     response_s1 = _postprocess_firac(response_s1)
     is_valid, reason, failed_fields = validate_firac(response_s1)
@@ -200,11 +200,11 @@ def process_case(
             DistillationRecord(
                 file=doc_name,
                 judgment=context,
-                cot_trace=cot_trace_s1,
+                # cot_trace=cot_trace_s1,
                 firac=response_s1.model_dump(),
                 stage=1,
                 model_name=TEACHER_MODEL,
-                input_token_estimate=prompt_tokens,
+                # input_token_estimate=prompt_tokens,
             ),
             STATUS_PASS,
         )
@@ -270,13 +270,13 @@ def process_case(
                     DistillationRecord(
                         file=doc_name,
                         judgment=context,
-                        cot_trace=(
-                            _extract_cot_trace(fix_text) if fix_text else cot_trace_s1
-                        ),
+                        # cot_trace=(
+                        #     _extract_cot_trace(fix_text) if fix_text else cot_trace_s1
+                        # ),
                         firac=response_s2.model_dump(),
                         stage=2,
                         model_name=TEACHER_MODEL,
-                        input_token_estimate=prompt_tokens,
+                        # input_token_estimate=prompt_tokens,
                     ),
                     STATUS_PASS,
                 )
@@ -294,7 +294,7 @@ def process_case(
         HumanMessage(content=stage3_user_msg),
     ]
 
-    raw_text_s3 = _raw_invoke(retry_messages, 3)
+    # raw_text_s3 = _raw_invoke(retry_messages, 3)
     response_s3 = llm_retry.invoke(retry_messages)
     response_s3 = _postprocess_firac(response_s3)
     is_valid, reason, _ = validate_firac(response_s3)
@@ -306,15 +306,15 @@ def process_case(
             DistillationRecord(
                 file=doc_name,
                 judgment=context,
-                cot_trace=(
-                    _extract_cot_trace(raw_text_s3)
-                    if raw_text_s3
-                    else "[trace unavailable]"
-                ),
+                # cot_trace=(
+                #     _extract_cot_trace(raw_text_s3)
+                #     if raw_text_s3
+                #     else "[trace unavailable]"
+                # ),
                 firac=response_s3.model_dump(),
                 stage=3,
                 model_name=TEACHER_MODEL,
-                input_token_estimate=prompt_tokens,
+                # input_token_estimate=prompt_tokens,
             ),
             STATUS_PASS,
         )

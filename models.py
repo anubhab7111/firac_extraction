@@ -36,7 +36,7 @@ class DistillationRecord:
         self,
         file: str,
         judgment: str,
-        cot_trace: str,
+        # cot_trace: str,
         firac: dict,
         stage: int,
         model_name: str = "",
@@ -44,7 +44,7 @@ class DistillationRecord:
     ):
         self.file = file
         self.judgment = judgment
-        self.cot_trace = cot_trace
+        # self.cot_trace = cot_trace
         self.firac = firac
         self.stage = stage
         self.model_name = model_name
@@ -62,7 +62,7 @@ class DistillationRecord:
         return {
             "file": self._sanitize(self.file),
             "judgment": self._sanitize(self.judgment),
-            "cot_trace": self._sanitize(self.cot_trace),
+            # "cot_trace": self._sanitize(self.cot_trace),
             "firac": sanitized_firac,
             "stage": self.stage,
             "metadata": {
