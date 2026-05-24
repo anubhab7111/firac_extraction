@@ -14,7 +14,6 @@ from langchain_ollama import ChatOllama
 from config import (
     TEACHER_MODEL,
     BASE_CTX,
-    MIN_OUTPUT_TOKENS,
     STAGE3_CONTEXT_CHARS,
     OUTPUT_FILENAME,
     CHECKPOINT_FILENAME,
@@ -27,6 +26,7 @@ from config import (
     STAGE3_TEMPERATURE,
     STAGE3_TOP_P,
     STAGE3_TOP_K,
+    TIMEOUT,
 )
 from models import DistillationRecord, FIRACFormat
 from prompts import (
@@ -354,24 +354,20 @@ def pipeline(
 
     context = extract_judgement_section(case.content)
 
-    # --- Timeout Wrapper Logic ---
     def run_process_case(ctx, doc_name, mets, q):
         try:
-            # Execute the core function
             record, status = process_case(ctx, doc_name=doc_name, metrics=mets)
-            # Pass the result and the updated metrics back through the queue
             q.put(("success", record, status, mets))
         except Exception as e:
             q.put(("error", traceback.format_exc(), None, None))
 
     queue = Queue()
 
-    # We pass a copy of metrics because processes don't share memory by default
     p = Process(
         target=run_process_case, args=(context, case.doc_name, metrics.copy(), queue)
     )
 
-    timeout = 2400  # Set your desired timeout duration in seconds here
+    timeout = TIMEOUT
     p.start()
     p.join(timeout)
 
@@ -379,13 +375,11 @@ def pipeline(
         print(f"[TIMEOUT] Skipping {case.doc_name} — execution exceeded {timeout}s.")
         p.terminate()
         p.join()
-        # Status returned as skip; metrics remain unmodified in the main process
         return None, STATUS_SKIP_ERROR
     else:
         if not queue.empty():
             q_status, output_record, output_status, updated_metrics = queue.get()
             if q_status == "success":
-                # Sync the metrics mutated in the subprocess back to the main process
                 metrics.update(updated_metrics)
                 return output_record, output_status
             else:

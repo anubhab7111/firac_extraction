@@ -22,3 +22,5 @@ STAGE2_TOP_K: int = 20
 STAGE3_TEMPERATURE: float = 0.3
 STAGE3_TOP_P: float = 0.92
 STAGE3_TOP_K: int = 25
+
+TIMEOUT: int = 2400
