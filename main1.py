@@ -5,8 +5,6 @@ import sys
 import time
 from pathlib import Path
 from typing import Optional
-from multiprocessing import Process, Queue
-import traceback
 
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_ollama import ChatOllama
@@ -326,21 +324,6 @@ def process_case(
     return None, STATUS_FAIL
 
 
-# def pipeline(
-#     pdf_path: str,
-#     metrics: dict,
-# ) -> tuple[Optional[DistillationRecord], str]:
-#     try:
-#         case = extract_text(pdf_path)
-#     except Exception as e:
-#         print(f"[ERROR] {os.path.basename(pdf_path)}: text extraction failed — {e}")
-#         metrics["text_extraction_failed"] += 1
-#         return None, STATUS_SKIP_ERROR
-#
-#     context = extract_judgement_section(case.content)
-#     return process_case(context, doc_name=case.doc_name, metrics=metrics)
-
-
 def pipeline(
     pdf_path: str,
     metrics: dict,
@@ -353,46 +336,7 @@ def pipeline(
         return None, STATUS_SKIP_ERROR
 
     context = extract_judgement_section(case.content)
-
-    # --- Timeout Wrapper Logic ---
-    def run_process_case(ctx, doc_name, mets, q):
-        try:
-            # Execute the core function
-            record, status = process_case(ctx, doc_name=doc_name, metrics=mets)
-            # Pass the result and the updated metrics back through the queue
-            q.put(("success", record, status, mets))
-        except Exception as e:
-            q.put(("error", traceback.format_exc(), None, None))
-
-    queue = Queue()
-
-    # We pass a copy of metrics because processes don't share memory by default
-    p = Process(
-        target=run_process_case, args=(context, case.doc_name, metrics.copy(), queue)
-    )
-
-    timeout = 2400  # Set your desired timeout duration in seconds here
-    p.start()
-    p.join(timeout)
-
-    if p.is_alive():
-        print(f"[TIMEOUT] Skipping {case.doc_name} — execution exceeded {timeout}s.")
-        p.terminate()
-        p.join()
-        # Status returned as skip; metrics remain unmodified in the main process
-        return None, STATUS_SKIP_ERROR
-    else:
-        if not queue.empty():
-            q_status, output_record, output_status, updated_metrics = queue.get()
-            if q_status == "success":
-                # Sync the metrics mutated in the subprocess back to the main process
-                metrics.update(updated_metrics)
-                return output_record, output_status
-            else:
-                print(f"[ERROR] {output_record}")
-                return None, STATUS_SKIP_ERROR
-
-        return None, STATUS_SKIP_ERROR
+    return process_case(context, doc_name=case.doc_name, metrics=metrics)
 
 
 def _load_checkpoint(path: str) -> dict:
