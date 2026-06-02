@@ -1,4 +1,4 @@
-TEACHER_MODEL: str = "gemma3:27b"
+TEACHER_MODEL: str = "qwen3:32b"
 
 BASE_CTX: int = 65536 // 4
 
